@@ -16,7 +16,7 @@ var characters = {
         _sprite : null,
         update: function() {
             if (pmath.distance(player.position.x, player.position.y, this._sprite.position.x, this._sprite.position.y) < 150) {
-                console.log("You're fired!");
+                characterSpeechBubble(this, "You're fired!");
             }
         }
     }
@@ -30,6 +30,17 @@ function getPlayerName() {
 
 function preloadSprite(name, img) {
 	return game.load.spritesheet(name, 'assets/characters/' + img + '.png', 32, 48, 16);
+}
+
+function characterSpeechBubble(person, text) {
+    var style = { font: "bold 16px Arial", fill: "#000", boundsAlignH: "center", boundsAlignV: "middle", backgroundColor: "#eee" };
+    var speech = game.add.text(16, 0, text, style);
+
+    person._sprite.addChild(speech);
+
+    setTimeout(function(){
+        person._sprite.removeChild(speech);
+    }, text.length * 75);
 }
 
 function createSprite(key, person) {
@@ -46,8 +57,8 @@ function createSprite(key, person) {
 
     //If name label, if able
     if (person.name) {
-        var style = { font: "bold 16px Arial", fill: "#000", boundsAlignH: "center", boundsAlignV: "middle" };
-        var nameSprite = game.add.text(0,-16, person.name, style);
+        var style = { font: "bold 16px Arial", fill: "#333", boundsAlignH: "center", boundsAlignV: "middle" };
+        var nameSprite = game.add.text(0, -16, person.name, style);
         nameSprite.anchor.setTo(0.5, 0);
         sprite.addChild(nameSprite);
     }
