@@ -1,4 +1,9 @@
-var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'game', { preload: preload, create: create, update: update, render: render });
+var pmath = Phaser.Math;
+
+var PLAYER_SPEED = 200;
+
+var player = null;
+var map = null;
 
 var characters = {
     'chris' : {
@@ -6,14 +11,18 @@ var characters = {
         name: "Chris"
     },
     'caleb' : {
-        image: "russian_f1"
+        image: "russian_f1",
+        name: "Caleb",
+        _sprite : null,
+        update: function() {
+            if (pmath.distance(player.position.x, player.position.y, this._sprite.position.x, this._sprite.position.y) < 150) {
+                console.log("You're fired!");
+            }
+        }
     }
 };
 
-var PLAYER_SPEED = 200;
-
-var player = null;
-var map = null;
+var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game', { preload: preload, create: create, update: update, render: render });
 
 function getPlayerName() {
     return "chris";
@@ -35,23 +44,27 @@ function createSprite(key, person) {
 	sprite.animations.add('walk_right', [8,9,10,11], fps, true);
 	sprite.animations.add('walk_up', [12,13,14,15], fps, true);
 
-    game.physics.p2.enable(sprite);
-    
+    //If name label, if able
     if (person.name) {
-        var nameSprite = game.add.text(0,0, person.name);
+        var style = { font: "bold 16px Arial", fill: "#000", boundsAlignH: "center", boundsAlignV: "middle" };
+        var nameSprite = game.add.text(0,-16, person.name, style);
+        nameSprite.anchor.setTo(0.5, 0);
         sprite.addChild(nameSprite);
+    }
+
+    //Find start position, if available
+    var startObj = _.find(map.objects.players, {name: key});
+    if (startObj) {
+        sprite.position.x = startObj.x;
+        sprite.position.y = startObj.y;
     }
 
 	return sprite;
 }
 
 function preload() {
-	game.add.plugin(Phaser.Plugin.Tiled);
-
-    var cacheKey = Phaser.Plugin.Tiled.utils.cacheKey;
-
-    game.load.tiledmap(cacheKey('tiled-lvl0', 'tiledmap'), 'assets/levels/test.json', null, Phaser.Tilemap.TILED_JSON);
-    game.load.image(cacheKey('tiled-lvl0', 'tileset', 'terrain_atlas'), 'assets/tiles/terrain_atlas.png');
+    game.load.image('terrain_atlas', 'assets/tiles/terrain_atlas.png');
+    game.load.tilemap('tiled-lvl0', 'assets/levels/test.json', null, Phaser.Tilemap.TILED_JSON);
     
     _.each(characters, function(val, key) {
         console.log(val);
@@ -63,12 +76,19 @@ function create() {
 
     //  This creates a simple sprite that is using our loaded image and
     //  displays it on-screen
-    //game.add.sprite(0, 0, 'einstein');
-    map = game.add.tiledmap('tiled-lvl0');
+    map = game.add.tilemap('tiled-lvl0');
+    map.addTilesetImage('terrain_atlas', 'terrain_atlas');
 
-    game.physics.startSystem(Phaser.Physics.P2JS);
-    game.physics.p2.convertTiledCollisionObjects(map, 'collision');
+    var bgLayer = map.createLayer('Tile Layer 1');
 
+    map._blockedLayer = map.createLayer('layer-objs');
+    map.setCollisionBetween(1, 2000, true, 'layer-objs');
+    bgLayer.resizeWorld();
+
+    //Init physics
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+
+    //init player
     var playerName = getPlayerName();
     _.each(characters, function(val, key) {
         var sprite = createSprite(key, val);
@@ -76,18 +96,22 @@ function create() {
             player = sprite;
         }
     });
+
     if (player) {
-        //game.physics.p2.enable(player);
+        game.physics.arcade.enable(player);
         game.camera.follow(player);
     }
+
+    //Init AI
+    //setTimeout(updateCharacters, 500);
+    var aiLoop = game.time.events.add(500, updateCharacters);
+    aiLoop.loop = true;
 }
 
 function update() {
     //Update player sprite with movement
-    player.body.setZeroVelocity();
-    player.body.setZeroRotation();
-    //player.body.setZeroForce();
-    player.body.rotation = 0;
+    player.body.velocity.x = 0;
+    player.body.velocity.y = 0;
 
 	var moving = false;
 
@@ -120,6 +144,17 @@ function update() {
     if (!moving) {
     	player.animations.play('stand');
     }
+
+    //Physics
+    game.physics.arcade.collide(player, map._blockedLayer);
+}
+
+function updateCharacters() {
+    _.each(characters, function(val, key) {
+        if (val.update) {
+            val.update();
+        }
+    });
 }
 
 function render() {

@@ -25,29 +25,18 @@
         {
          "draworder":"topdown",
          "height":32,
-         "name":"collision",
+         "name":"players",
          "objects":[
                 {
-                 "height":119,
-                 "id":1,
-                 "name":"",
+                 "height":23,
+                 "id":3,
+                 "name":"caleb",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":99,
-                 "x":141,
-                 "y":115
-                }, 
-                {
-                 "height":0,
-                 "id":2,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":0,
+                 "width":28,
                  "x":240,
-                 "y":234
+                 "y":174
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -56,7 +45,7 @@
          "x":0,
          "y":0
         }],
- "nextobjectid":3,
+ "nextobjectid":5,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tileheight":16,
