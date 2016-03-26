@@ -1,10 +1,11 @@
-var pmath = Phaser.Math;
 
+// Config
 var PLAYER_SPEED = 200;
 
 var player = null;
 var map = null;
 
+// Characters
 var characters = {
     'chris' : {
         image: "officeman2",
@@ -13,23 +14,29 @@ var characters = {
     'caleb' : {
         image: "russian_f1",
         name: "Caleb",
-        _sprite : null,
         update: function() {
-            if (pmath.distance(player.position.x, player.position.y, this._sprite.position.x, this._sprite.position.y) < 150) {
+            if (spriteDist(player, this._sprite) < 150) {
                 characterSpeechBubble(this, "You're fired!");
+            }
+        }
+    },
+    'halbe' : {
+        image: "russian_f1",
+        name: "Matt",
+        update: function() {
+            if (spriteDist(player, this._sprite) < 150) {
+                characterSpeechBubble(this, "Where's the coffee?");
             }
         }
     }
 };
 
-var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game', { preload: preload, create: create, update: update, render: render });
+// ================ AI HELPERS ================
 
-function getPlayerName() {
-    return "chris";
-}
+var pmath = Phaser.Math;
 
-function preloadSprite(name, img) {
-	return game.load.spritesheet(name, 'assets/characters/' + img + '.png', 32, 48, 16);
+function spriteDist(s0, s1) {
+    return pmath.distance(s0.position.x, s0.position.y, s1.position.x, s1.position.y);
 }
 
 function characterSpeechBubble(person, text) {
@@ -43,11 +50,24 @@ function characterSpeechBubble(person, text) {
     }, text.length * 75);
 }
 
+// =============== MAIN GAME ==================
+
+var game = new Phaser.Game(800, 600, Phaser.WEBGL, 'game', { preload: preload, create: create, update: update, render: render });
+
+function getPlayerName() {
+    return "chris";
+}
+
+function preloadSprite(name, img) {
+	return game.load.spritesheet(name, 'assets/characters/' + img + '.png', 32, 48, 16);
+}
+
 function createSprite(key, person) {
 	var sprite = person._sprite = game.add.sprite(0, 0, key);
 	sprite.anchor.setTo(0.5, 0);
-	sprite.scale.setTo(1.25);
+	//sprite.scale.setTo(1.25);
 
+    //Set up animations
 	var fps = 8;
 	sprite.animations.add('stand', [0]);
 	sprite.animations.add('walk_down', [0,1,2,3], fps, true);
@@ -64,7 +84,7 @@ function createSprite(key, person) {
     }
 
     //Find start position, if available
-    var startObj = _.find(map.objects.players, {name: key});
+    var startObj = _.find(map.objects.spawns, {name: key});
     if (startObj) {
         sprite.position.x = startObj.x;
         sprite.position.y = startObj.y;
@@ -74,8 +94,9 @@ function createSprite(key, person) {
 }
 
 function preload() {
-    game.load.image('terrain_atlas', 'assets/tiles/terrain_atlas.png');
-    game.load.tilemap('tiled-lvl0', 'assets/levels/test.json', null, Phaser.Tilemap.TILED_JSON);
+    game.load.image('indoors', 'assets/tiles/indoors.png');
+    game.load.image('indoors_2', 'assets/tiles/indoors_2.png');
+    game.load.tilemap('tiled-lvl0', 'assets/levels/webs.json', null, Phaser.Tilemap.TILED_JSON);
     
     _.each(characters, function(val, key) {
         console.log(val);
@@ -88,12 +109,17 @@ function create() {
     //  This creates a simple sprite that is using our loaded image and
     //  displays it on-screen
     map = game.add.tilemap('tiled-lvl0');
-    map.addTilesetImage('terrain_atlas', 'terrain_atlas');
+    map.addTilesetImage('indoors', 'indoors');
+    map.addTilesetImage('indoors_2', 'indoors_2');
 
-    var bgLayer = map.createLayer('Tile Layer 1');
+    var bgLayer = map.createLayer('bg');
 
-    map._blockedLayer = map.createLayer('layer-objs');
-    map.setCollisionBetween(1, 2000, true, 'layer-objs');
+    map._walls = map.createLayer('walls');
+    map.setCollisionBetween(1, 10000, true, 'walls');
+
+    map._objects = map.createLayer('objects');
+    map.setCollisionBetween(1, 10000,true,'objects');
+
     bgLayer.resizeWorld();
 
     //Init physics
@@ -101,20 +127,29 @@ function create() {
 
     //init player
     var playerName = getPlayerName();
-    _.each(characters, function(val, key) {
-        var sprite = createSprite(key, val);
+    _.each(characters, function(person, key) {
+        var sprite = createSprite(key, person);
         if (key === playerName) {
             player = sprite;
+        }
+        if (person.init) {
+            person.init();
         }
     });
 
     if (player) {
         game.physics.arcade.enable(player);
         game.camera.follow(player);
+
+        //Reduce size of collision box
+        player.body.width = 16;
+        player.body.height = 16;
+        player.body.offset.y = 32;
+        player.body.offset.x = 0;
     }
 
     //Init AI
-    //setTimeout(updateCharacters, 500);
+    //setTimeout(updateCharacters, 500);d
     var aiLoop = game.time.events.add(500, updateCharacters);
     aiLoop.loop = true;
 }
@@ -157,7 +192,8 @@ function update() {
     }
 
     //Physics
-    game.physics.arcade.collide(player, map._blockedLayer);
+    game.physics.arcade.collide(player, map._walls);
+    game.physics.arcade.collide(player, map._objects);
 }
 
 function updateCharacters() {
