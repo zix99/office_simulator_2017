@@ -1,9 +1,17 @@
 
 // Config
 var PLAYER_SPEED = 200;
+var DEBUG = 0;
 
 var player = null;
 var map = null;
+var items = [];
+
+var itemTypes = {
+    "coffee" : {
+        image: "coffee"
+    }
+}
 
 // Characters
 var characters = {
@@ -12,20 +20,46 @@ var characters = {
         name: "Chris"
     },
     'caleb' : {
-        image: "russian_f1",
+        image: "pirate_m2",
         name: "Caleb",
         update: function() {
-            if (spriteDist(player, this._sprite) < 150) {
+            if (spriteDist(player, this._sprite) < 100) {
                 characterSpeechBubble(this, "You're fired!");
             }
+        },
+        init: function() {
+            var self = this;
+            var patrol = function() {
+                movePath(self._sprite, 'caleb_path', 100, patrol);
+            };
+            patrol();
         }
     },
     'halbe' : {
-        image: "russian_f1",
+        image: "officeman1",
         name: "Matt",
         update: function() {
             if (spriteDist(player, this._sprite) < 150) {
-                characterSpeechBubble(this, "Where's the coffee?");
+                characterSpeechBubble(this, "Could you find me coffee?\nI can't code without coffee...");
+            }
+        }
+    },
+    'john' : {
+        image: 'steampunk_m7',
+        name: 'John',
+    },
+    'nate' : {
+        image: 'tremel',
+        name: 'Nate'
+    },
+    'shawn' : {
+        image: 'officeman5',
+        name: 'Shawn',
+        update: function() {
+            if (!this._state && spriteDist(player, this._sprite) < 100) {
+                this._state = 1;
+                movePath(this._sprite, 'shawn_out');
+                characterSpeechBubble(this, "Caleb's on a firing spree! RUN!");
             }
         }
     }
@@ -40,14 +74,70 @@ function spriteDist(s0, s1) {
 }
 
 function characterSpeechBubble(person, text) {
-    var style = { font: "bold 16px Arial", fill: "#000", boundsAlignH: "center", boundsAlignV: "middle", backgroundColor: "#eee" };
-    var speech = game.add.text(16, 0, text, style);
 
-    person._sprite.addChild(speech);
+    if (!person._activeSpeech) {
+        var style = { font: "bold 16px Arial", fill: "#000", boundsAlignH: "center", boundsAlignV: "middle", backgroundColor: "#eee" };
+        var speech = person._activeSpeech = game.add.text(16, 0, text, style);
 
-    setTimeout(function(){
-        person._sprite.removeChild(speech);
-    }, text.length * 75);
+        person._sprite.addChild(speech);
+
+        setTimeout(function(){
+            person._sprite.removeChild(speech);
+            person._activeSpeech = null;
+        }, text.length * 75);
+    }
+}
+
+function getPath(key) {
+    var path = _.find(map.objects.paths, {name: key});
+    if (!path) {
+        return null;
+    }
+    
+    out = [];
+    _.each(path.polyline, function(offset){
+        out.push( {x: offset[0] + path.x, y: offset[1] + path.y} );
+    });
+    return out;
+}
+
+function movePath(sprite, pathKey, speed, onComplete) {
+    if (!speed)
+        speed = 200;
+
+    var path = getPath(pathKey);
+    if (path) {
+        console.log("Moving along path " + pathKey);
+
+        var firstTween = null;
+        var prevTween = null;
+        var lastPt = {x: sprite.x, y: sprite.y};
+
+        _.each(path, function(pt){
+            console.log(pt);
+
+            var dist = pmath.distance(pt.x, pt.y, lastPt.x, lastPt.y);
+            var tweenTime = dist * 1000 / speed;
+
+            var tween = game.add.tween(sprite).to(pt, tweenTime);
+            if (prevTween) {
+                prevTween.chain(tween);
+            }
+            if (!firstTween) {
+                firstTween = tween;
+            }
+            prevTween = tween;
+            lastPt = pt;
+        });
+
+        if (onComplete) {
+            prevTween.onComplete.add(onComplete);
+        }
+
+        firstTween.start();
+    } else {
+        console.log("Path not found " + pathKey);
+    }
 }
 
 // =============== MAIN GAME ==================
@@ -102,6 +192,10 @@ function preload() {
         console.log(val);
         val._sprite = preloadSprite(key, val.image);
     });
+
+    _.each(itemTypes, function(val, key){
+        game.load.image(key, "assets/items/" + val.image + ".png");
+    });
 }
 
 function create() {
@@ -125,7 +219,7 @@ function create() {
     //Init physics
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
-    //init player
+    //init characters
     var playerName = getPlayerName();
     _.each(characters, function(person, key) {
         var sprite = createSprite(key, person);
@@ -137,6 +231,7 @@ function create() {
         }
     });
 
+    //init player, if able
     if (player) {
         game.physics.arcade.enable(player);
         game.camera.follow(player);
@@ -147,6 +242,12 @@ function create() {
         player.body.offset.y = 32;
         player.body.offset.x = 0;
     }
+
+    //init items
+    _.each(map.objects.items, function(item){
+        sprite = game.add.sprite(item.x, item.y, item.name);
+        items.push(sprite);
+    });
 
     //Init AI
     //setTimeout(updateCharacters, 500);d
@@ -205,6 +306,8 @@ function updateCharacters() {
 }
 
 function render() {
-    game.debug.cameraInfo(game.camera, 32, 32);
-    game.debug.spriteCoords(player, 32, 500);
+    if (DEBUG) {
+        game.debug.cameraInfo(game.camera, 32, 32);
+        game.debug.spriteCoords(player, 32, 500);
+    }
 }
