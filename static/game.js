@@ -244,7 +244,7 @@ var ui = {
 
 // =============== MAIN GAME ==================
 
-var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'game', { preload: preload, create: create, update: update, render: render });
+var game = new Phaser.Game(640, 480, Phaser.AUTO, 'game', { preload: preload, create: create, update: update, render: render });
 
 function preloadSprite(name, img) {
 	return game.load.spritesheet(name, 'assets/characters/' + img + '.png', 32, 48, 16);
@@ -339,7 +339,7 @@ function create() {
     //init player, if able
     if (player) {
         game.physics.arcade.enable(player._sprite);
-        game.camera.follow(player._sprite);
+        game.camera.follow(player._sprite, Phaser.Camera.FOLLOW_PLATFORMER);
 
         //Reduce size of collision box
         player._sprite.body.width = 16;
