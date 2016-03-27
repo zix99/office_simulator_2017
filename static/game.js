@@ -2,10 +2,18 @@
 // Config
 var PLAYER_SPEED = 200;
 var DEBUG = 0;
+var DIFFICULTY_MOD = 1;
+
+var playerName = window.location.hash.substr(1) || 'chris';
 
 var player = null;
 var map = null;
 var items = [];
+
+var gameState = {
+    score: 0,
+    timeLeft: 60
+};
 
 var itemTypes = {
     "coffee" : {
@@ -23,8 +31,12 @@ var characters = {
         image: "pirate_m2",
         name: "Caleb",
         update: function() {
-            if (spriteDist(player, this._sprite) < 100) {
+            if (spriteDist(player._sprite, this._sprite) < 100) {
                 characterSpeechBubble(this, "You're fired!");
+                setTimeout(function(){
+                    var respawn = _.find(map.objects.spawns, {name: "respawn"});
+                    player._sprite.position = {x: respawn.x, y: respawn.y};
+                }, 750);
             }
         },
         init: function() {
@@ -39,14 +51,44 @@ var characters = {
         image: "officeman1",
         name: "Matt",
         update: function() {
-            if (spriteDist(player, this._sprite) < 150) {
-                characterSpeechBubble(this, "Could you find me coffee?\nI can't code without coffee...");
+            if (spriteDist(player._sprite, this._sprite) < 150) {
+                if (player._hasCoffee) {
+                    characterSpeechBubble(this, "Yay coffee!");
+                    player._hasCoffee = false;
+                    gameState.score++;
+                    gameState.timeLeft = 60;
+                } else {
+                    characterSpeechBubble(this, "Could you find me coffee?\nI can't code without coffee...");
+                }
+            }
+
+            if (gameState.timeLeft <= 0) {
+                characterSpeechBubble(this, "I'm tired.\nTime to go home", 120 * 1000);
+                movePath(self._sprite, 'matt_leave', 150);
+            }
+        }
+    },
+    'noah' : {
+        image: 'schoolboy',
+        name: 'Noah',
+        update: function() {
+            if (spriteDist(player._sprite, this._sprite) < 200) {
+                characterSpeechBubble(this, "Cat's and milk...");
             }
         }
     },
     'john' : {
         image: 'steampunk_m7',
         name: 'John',
+        _boosts: 3,
+        update: function() {
+            if (player._speedModifier <= 1.1 && this._boosts > 0 && spriteDist(player._sprite, this._sprite) < 50) {
+                this._boosts--;
+                characterSpeechBubble(this, "I betroth upon you a speed boost");
+                player._speedModifier = 2;
+                setTimeout(function(){ player._speedModifier = 1; }, 10000);
+            }
+        }
     },
     'nate' : {
         image: 'tremel',
@@ -56,10 +98,11 @@ var characters = {
         image: 'officeman5',
         name: 'Shawn',
         update: function() {
-            if (!this._state && spriteDist(player, this._sprite) < 100) {
+            if (!this._state && spriteDist(player._sprite, this._sprite) < 100) {
                 this._state = 1;
                 movePath(this._sprite, 'shawn_out');
                 characterSpeechBubble(this, "Caleb's on a firing spree! RUN!");
+                this._sprite.animations.play('walk_left');
             }
         }
     }
@@ -73,7 +116,7 @@ function spriteDist(s0, s1) {
     return pmath.distance(s0.position.x, s0.position.y, s1.position.x, s1.position.y);
 }
 
-function characterSpeechBubble(person, text) {
+function characterSpeechBubble(person, text, time) {
 
     if (!person._activeSpeech) {
         var style = { font: "bold 16px Arial", fill: "#000", boundsAlignH: "center", boundsAlignV: "middle", backgroundColor: "#eee" };
@@ -84,7 +127,7 @@ function characterSpeechBubble(person, text) {
         setTimeout(function(){
             person._sprite.removeChild(speech);
             person._activeSpeech = null;
-        }, text.length * 75);
+        }, time || text.length * 75);
     }
 }
 
@@ -140,13 +183,44 @@ function movePath(sprite, pathKey, speed, onComplete) {
     }
 }
 
+// =============== UI =========================
+
+var ui = {
+    _style: {font: "32px Arial", fill: "#fff"},
+
+    _timeLeft: null,
+    _timeLabel: null,
+    _score: null,
+
+    preload: function() {
+        game.load.image('grad_redgreen', 'assets/grad_redgreen.png');
+    },
+
+    init: function() {
+        this.score = game.add.text(0, 0, "Score: 0", this._style);
+        this.score.fixedToCamera = true;
+
+        this.timeLabel = game.add.text(0, 32, "Time:", this._style);
+        this.timeLabel.fixedToCamera = true;
+
+        var graphics = game.add.graphics(100,100);
+
+        this.timeLeft = game.add.sprite(90, 40, "grad_redgreen");
+        this.timeLeft.fixedToCamera = true;
+        this.timeLeft.width = 100;
+        this.timeLeft.height = 24;
+    },
+
+    update: function() {
+        this.score.setText("Score: " + gameState.score);
+        this.timeLeft.width = gameState.timeLeft * 4;
+    }
+}
+
+
 // =============== MAIN GAME ==================
 
 var game = new Phaser.Game(800, 600, Phaser.WEBGL, 'game', { preload: preload, create: create, update: update, render: render });
-
-function getPlayerName() {
-    return "chris";
-}
 
 function preloadSprite(name, img) {
 	return game.load.spritesheet(name, 'assets/characters/' + img + '.png', 32, 48, 16);
@@ -196,6 +270,8 @@ function preload() {
     _.each(itemTypes, function(val, key){
         game.load.image(key, "assets/items/" + val.image + ".png");
     });
+
+    ui.preload();
 }
 
 function create() {
@@ -220,11 +296,10 @@ function create() {
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
     //init characters
-    var playerName = getPlayerName();
     _.each(characters, function(person, key) {
         var sprite = createSprite(key, person);
         if (key === playerName) {
-            player = sprite;
+            player = person;
         }
         if (person.init) {
             person.init();
@@ -233,68 +308,104 @@ function create() {
 
     //init player, if able
     if (player) {
-        game.physics.arcade.enable(player);
-        game.camera.follow(player);
+        game.physics.arcade.enable(player._sprite);
+        game.camera.follow(player._sprite);
 
         //Reduce size of collision box
-        player.body.width = 16;
-        player.body.height = 16;
-        player.body.offset.y = 32;
-        player.body.offset.x = 0;
+        player._sprite.body.width = 16;
+        player._sprite.body.height = 16;
+        player._sprite.body.offset.y = 32;
+        player._sprite.body.offset.x = 0;
+
+        //Player logic
+        player._hasCoffee = false;
+        player._speedModifier = 1;
     }
 
     //init items
     _.each(map.objects.items, function(item){
-        sprite = game.add.sprite(item.x, item.y, item.name);
-        items.push(sprite);
+        if (item.name in itemTypes) {
+            console.log("Spawn item " + item.name);
+            sprite = game.add.sprite(item.x, item.y, item.name);
+            items.push(sprite);
+        } else {
+            console.log("WARN: Unknown item type " + item.name);
+        }
     });
+
+    //Set up score UI
+    ui.init();
 
     //Init AI
     //setTimeout(updateCharacters, 500);d
     var aiLoop = game.time.events.add(500, updateCharacters);
     aiLoop.loop = true;
+
+    //Score loop
+    var scoreLoop = game.time.events.add(250, function(){
+        gameState.timeLeft = Math.max(gameState.timeLeft - (gameState.score + 1) * 0.11 * DIFFICULTY_MOD, 0);
+    });
+    scoreLoop.loop = true;
 }
 
 function update() {
     //Update player sprite with movement
-    player.body.velocity.x = 0;
-    player.body.velocity.y = 0;
+    player._sprite.body.velocity.x = 0;
+    player._sprite.body.velocity.y = 0;
 
 	var moving = false;
 
     if (game.input.keyboard.isDown(Phaser.Keyboard.A))
     {
-        player.body.velocity.x -= PLAYER_SPEED;
-        player.animations.play('walk_left');
+        player._sprite.body.velocity.x -= PLAYER_SPEED * player._speedModifier;
+        player._sprite.animations.play('walk_left');
         moving = true;
     }
     else if (game.input.keyboard.isDown(Phaser.Keyboard.D))
     {
-        player.body.velocity.x += PLAYER_SPEED;
-        player.animations.play('walk_right');
+        player._sprite.body.velocity.x += PLAYER_SPEED * player._speedModifier;
+        player._sprite.animations.play('walk_right');
         moving = true;
     }
 
     if (game.input.keyboard.isDown(Phaser.Keyboard.W))
     {
-        player.body.velocity.y -= PLAYER_SPEED;
-        player.animations.play('walk_up');
+        player._sprite.body.velocity.y -= PLAYER_SPEED * player._speedModifier;
+        player._sprite.animations.play('walk_up');
         moving = true;
     }
     else if (game.input.keyboard.isDown(Phaser.Keyboard.S))
     {
-        player.body.velocity.y += PLAYER_SPEED;
-        player.animations.play('walk_down');
+        player._sprite.body.velocity.y += PLAYER_SPEED * player._speedModifier;
+        player._sprite.animations.play('walk_down');
         moving = true;
     }
 
     if (!moving) {
-    	player.animations.play('stand');
+    	player._sprite.animations.play('stand');
     }
 
     //Physics
-    game.physics.arcade.collide(player, map._walls);
-    game.physics.arcade.collide(player, map._objects);
+    game.physics.arcade.collide(player._sprite, map._walls);
+    game.physics.arcade.collide(player._sprite, map._objects);
+
+    //Getting items
+    _.each(items, function(item, i){
+        if (spriteDist(player._sprite, item) < 50) {
+            if (!player._hasCoffee) {
+                player._hasCoffee = true;
+                characterSpeechBubble(player, "Got it!");
+                items.splice(i, 1);
+                item.destroy();
+                return false;
+            } else {
+                characterSpeechBubble(player, "I can only carry one");
+            }
+        }
+    });
+
+    //UI
+    ui.update();
 }
 
 function updateCharacters() {
@@ -308,6 +419,6 @@ function updateCharacters() {
 function render() {
     if (DEBUG) {
         game.debug.cameraInfo(game.camera, 32, 32);
-        game.debug.spriteCoords(player, 32, 500);
+        game.debug.spriteCoords(player._sprite, 32, 500);
     }
 }
