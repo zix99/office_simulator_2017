@@ -213,9 +213,11 @@ var ui = {
     init: function() {
         this.score = game.add.text(0, 0, "Score: 0", this._style);
         this.score.fixedToCamera = true;
+        this.score.setShadow(2, 2, 'rgba(0,0,0,0.5)', 0);
 
         this.timeLabel = game.add.text(0, 32, "Time:", this._style);
         this.timeLabel.fixedToCamera = true;
+        this.timeLabel.setShadow(2, 2, 'rgba(0,0,0,0.5)', 0);
 
         var graphics = game.add.graphics(100,100);
 
@@ -242,7 +244,7 @@ var ui = {
 
 // =============== MAIN GAME ==================
 
-var game = new Phaser.Game(800, 600, Phaser.WEBGL, 'game', { preload: preload, create: create, update: update, render: render });
+var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'game', { preload: preload, create: create, update: update, render: render });
 
 function preloadSprite(name, img) {
 	return game.load.spritesheet(name, 'assets/characters/' + img + '.png', 32, 48, 16);
