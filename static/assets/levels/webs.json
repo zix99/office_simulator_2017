@@ -459,6 +459,198 @@
                  "width":0,
                  "x":380,
                  "y":398
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":27,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1319,
+                 "y":487
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":28,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1444,
+                 "y":539
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":29,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1490,
+                 "y":425
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":30,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1394,
+                 "y":108
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":31,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":548,
+                 "y":405
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":32,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":60,
+                 "y":813
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":33,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":317,
+                 "y":872
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":34,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":796,
+                 "y":1000
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":35,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1391,
+                 "y":935
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":36,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1492,
+                 "y":934
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":37,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1781,
+                 "y":901
+                }, 
+                {
+                 "gid":2673,
+                 "height":0,
+                 "id":38,
+                 "name":"coffee",
+                 "properties":
+                    {
+
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":1674,
+                 "y":896
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -467,7 +659,7 @@
          "x":0,
          "y":0
         }],
- "nextobjectid":27,
+ "nextobjectid":39,
  "orientation":"orthogonal",
  "properties":
     {

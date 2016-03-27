@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="128" height="72" tilewidth="16" tileheight="16" nextobjectid="27">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="128" height="72" tilewidth="16" tileheight="16" nextobjectid="39">
  <tileset firstgid="1" name="indoors" tilewidth="16" tileheight="16">
   <image source="../static/assets/tiles/indoors.png" width="624" height="304"/>
  </tileset>
@@ -276,5 +276,17 @@
  <objectgroup name="items">
   <object id="20" name="coffee" gid="2673" x="1760" y="385"/>
   <object id="23" name="coffee" gid="2673" x="380" y="398"/>
+  <object id="27" name="coffee" gid="2673" x="1319" y="487"/>
+  <object id="28" name="coffee" gid="2673" x="1444" y="539"/>
+  <object id="29" name="coffee" gid="2673" x="1490" y="425"/>
+  <object id="30" name="coffee" gid="2673" x="1394" y="108"/>
+  <object id="31" name="coffee" gid="2673" x="548" y="405"/>
+  <object id="32" name="coffee" gid="2673" x="60" y="813"/>
+  <object id="33" name="coffee" gid="2673" x="317" y="872"/>
+  <object id="34" name="coffee" gid="2673" x="796" y="1000"/>
+  <object id="35" name="coffee" gid="2673" x="1391" y="935"/>
+  <object id="36" name="coffee" gid="2673" x="1492" y="934"/>
+  <object id="37" name="coffee" gid="2673" x="1781" y="901"/>
+  <object id="38" name="coffee" gid="2673" x="1674" y="896"/>
  </objectgroup>
 </map>

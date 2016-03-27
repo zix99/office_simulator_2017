@@ -2,7 +2,7 @@
 // Config
 var PLAYER_SPEED = 200;
 var DEBUG = 0;
-var DIFFICULTY_MOD = 1;
+var DIFFICULTY_MOD = 0.2;
 
 var playerName = window.location.hash.substr(1) || 'chris';
 
@@ -33,6 +33,7 @@ var characters = {
         update: function() {
             if (spriteDist(player._sprite, this._sprite) < 100) {
                 characterSpeechBubble(this, "You're fired!");
+                game.add.audio('fired').play();
                 setTimeout(function(){
                     var respawn = _.find(map.objects.spawns, {name: "respawn"});
                     player._sprite.position = {x: respawn.x, y: respawn.y};
@@ -51,20 +52,23 @@ var characters = {
         image: "officeman1",
         name: "Matt",
         update: function() {
-            if (spriteDist(player._sprite, this._sprite) < 150) {
+            if (spriteDist(player._sprite, this._sprite) < 150 && !this._leaving) {
                 if (player._hasCoffee) {
                     characterSpeechBubble(this, "Yay coffee!");
                     player._hasCoffee = false;
                     gameState.score++;
                     gameState.timeLeft = 60;
+                    game.add.audio('sip').play();
                 } else {
                     characterSpeechBubble(this, "Could you find me coffee?\nI can't code without coffee...");
                 }
             }
 
-            if (gameState.timeLeft <= 0) {
+            if (gameState.timeLeft <= 0 && !this._leaving) {
+                this._leaving = true;
                 characterSpeechBubble(this, "I'm tired.\nTime to go home", 120 * 1000);
-                movePath(self._sprite, 'matt_leave', 150);
+                movePath(this._sprite, 'matt_leave', 150);
+                ui.gameOver();
             }
         }
     },
@@ -86,6 +90,7 @@ var characters = {
                 this._boosts--;
                 characterSpeechBubble(this, "I betroth upon you a speed boost");
                 player._speedModifier = 2;
+                game.add.audio('zap').play();
                 setTimeout(function(){ player._speedModifier = 1; }, 10000);
             }
         }
@@ -102,7 +107,6 @@ var characters = {
                 this._state = 1;
                 movePath(this._sprite, 'shawn_out');
                 characterSpeechBubble(this, "Caleb's on a firing spree! RUN!");
-                this._sprite.animations.play('walk_left');
             }
         }
     }
@@ -118,9 +122,10 @@ function spriteDist(s0, s1) {
 
 function characterSpeechBubble(person, text, time) {
 
-    if (!person._activeSpeech) {
-        var style = { font: "bold 16px Arial", fill: "#000", boundsAlignH: "center", boundsAlignV: "middle", backgroundColor: "#eee" };
-        var speech = person._activeSpeech = game.add.text(16, 0, text, style);
+    if (text !== person._activeSpeech) {
+        var style = { font: "bold 16px Arial", fill: "#000", boundsAlignH: "center", boundsAlignV: "middle", backgroundColor: "rgba(240, 240, 240, 0.5)" };
+        person._activeSpeech = text;
+        var speech = game.add.text(16, 0, text, style);
 
         person._sprite.addChild(speech);
 
@@ -163,6 +168,15 @@ function movePath(sprite, pathKey, speed, onComplete) {
             var tweenTime = dist * 1000 / speed;
 
             var tween = game.add.tween(sprite).to(pt, tweenTime);
+
+            tween.onStart.add(function(){
+                sprite.animations.play('walk_right');
+            });
+
+            tween.onComplete.add(function(){
+                sprite.animations.play('stand');
+            });
+
             if (prevTween) {
                 prevTween.chain(tween);
             }
@@ -214,6 +228,14 @@ var ui = {
     update: function() {
         this.score.setText("Score: " + gameState.score);
         this.timeLeft.width = gameState.timeLeft * 4;
+    },
+
+    gameOver: function() {
+        var style = {font: "64px Arial", fill: "#f00", strokeThickness: 3};
+        var text = game.add.text(game.width / 2, game.height / 2, "GAME OVER\nFinal Score: " + gameState.score, style);
+        text.fixedToCamera = true;
+        text.anchor.setTo(0.5, 0.5);
+        text.setShadow(5, 5, 'rgba(0,0,0,0.5)', 0);
     }
 }
 
@@ -272,6 +294,12 @@ function preload() {
     });
 
     ui.preload();
+
+    game.load.audio('music', 'assets/music/eric_skiff_all_of_us.mp3');
+    game.load.audio('powerup', 'assets/sfx/powerup.wav');
+    game.load.audio('fired', 'assets/sfx/fired.wav');
+    game.load.audio('sip', 'assets/sfx/sip.wav');
+    game.load.audio('zap', 'assets/sfx/zap.wav');
 }
 
 function create() {
@@ -343,9 +371,15 @@ function create() {
 
     //Score loop
     var scoreLoop = game.time.events.add(250, function(){
-        gameState.timeLeft = Math.max(gameState.timeLeft - (gameState.score + 1) * 0.11 * DIFFICULTY_MOD, 0);
+        gameState.timeLeft = Math.max(gameState.timeLeft - (gameState.score + 1) * DIFFICULTY_MOD, 0);
     });
     scoreLoop.loop = true;
+
+    //Play music
+    var music = game.add.audio('music');
+    music.volume = 0.5;
+    music.loop = true;
+    music.play();
 }
 
 function update() {
@@ -397,6 +431,7 @@ function update() {
                 characterSpeechBubble(player, "Got it!");
                 items.splice(i, 1);
                 item.destroy();
+                game.add.audio('powerup').play();
                 return false;
             } else {
                 characterSpeechBubble(player, "I can only carry one");
